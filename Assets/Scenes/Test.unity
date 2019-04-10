@@ -112,6 +112,80 @@ NavMeshSettings:
     debug:
       m_Flags: 0
   m_NavMeshData: {fileID: 0}
+--- !u!1001 &304033424
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 6155522501824422967, guid: 673bb3844cf50d848aee3276b19b8ca9,
+        type: 3}
+      propertyPath: m_Name
+      value: Kinect VFX Mapped
+      objectReference: {fileID: 0}
+    - target: {fileID: 6155522501824422965, guid: 673bb3844cf50d848aee3276b19b8ca9,
+        type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6155522501824422965, guid: 673bb3844cf50d848aee3276b19b8ca9,
+        type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6155522501824422965, guid: 673bb3844cf50d848aee3276b19b8ca9,
+        type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6155522501824422965, guid: 673bb3844cf50d848aee3276b19b8ca9,
+        type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6155522501824422965, guid: 673bb3844cf50d848aee3276b19b8ca9,
+        type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6155522501824422965, guid: 673bb3844cf50d848aee3276b19b8ca9,
+        type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6155522501824422965, guid: 673bb3844cf50d848aee3276b19b8ca9,
+        type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6155522501824422965, guid: 673bb3844cf50d848aee3276b19b8ca9,
+        type: 3}
+      propertyPath: m_RootOrder
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 6155522501824422965, guid: 673bb3844cf50d848aee3276b19b8ca9,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6155522501824422965, guid: 673bb3844cf50d848aee3276b19b8ca9,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6155522501824422965, guid: 673bb3844cf50d848aee3276b19b8ca9,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6155522501824422964, guid: 673bb3844cf50d848aee3276b19b8ca9,
+        type: 3}
+      propertyPath: PointCloudMap
+      value: 
+      objectReference: {fileID: 8400000, guid: 273880c5820cdf9448a44e7bd159fa60, type: 2}
+    m_RemovedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 673bb3844cf50d848aee3276b19b8ca9, type: 3}
 --- !u!1 &459503793
 GameObject:
   m_ObjectHideFlags: 0
@@ -147,8 +221,8 @@ Camera:
   m_GameObject: {fileID: 459503793}
   m_Enabled: 1
   serializedVersion: 2
-  m_ClearFlags: 1
-  m_BackGroundColor: {r: 0.19215687, g: 0.3019608, b: 0.4745098, a: 0}
+  m_ClearFlags: 2
+  m_BackGroundColor: {r: 0, g: 0, b: 0, a: 0}
   m_projectionMatrixMode: 1
   m_SensorSize: {x: 36, y: 24}
   m_LensShift: {x: 0, y: 0}
