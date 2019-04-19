@@ -36,6 +36,8 @@ Shader "Unlit/Particle"
         CGINCLUDE
 
 #include "UnityCG.cginc"
+
+    #pragma multi_compile __ FLIP
             //#include "Common.cginc"
 
     sampler2D _PositionBuffer;
@@ -43,10 +45,8 @@ Shader "Unlit/Particle"
     sampler2D _ColorBuffer;
 
 
-    //sampler2D _MainTex;
-    //float4 _MainTex_ST;
-    //half _BlendMode;
     float _ParticleSize;
+    float4x4 _ModelMat;
 
     uint _InstanceOffset;
 
@@ -60,7 +60,7 @@ Shader "Unlit/Particle"
         float4 position : SV_POSITION;
         float2 uv : TEXCOORD0;
         float4 color : COLOR;
-        // float psize : TEXCOORD1;
+        float psize : TEXCOORD1;
     };
 
     #define SQRT_THREE 1.73205080757
@@ -82,8 +82,13 @@ Shader "Unlit/Particle"
             0.0, 0.0
             );
 
-        float4 p = tex2Dlod(_PositionBuffer, uv);
+        float4 p = float4(tex2Dlod(_PositionBuffer, uv).xyz, 1.0);
+        #if !FLIP
+        p.x = -p.x;
+        #endif
         float4 c = tex2Dlod(_ColorBuffer, uv);
+
+        p = float4(mul(_ModelMat, p).xyz, 1.0);
 
         float l = p.w + 0.5;
         float s = 1.0;
@@ -96,42 +101,39 @@ Shader "Unlit/Particle"
         p = UnityWorldToClipPos(p.xyz);
         p.xy += s_Triangle[vertex_id] * psize * aspect;
 
-        // o.position = UnityWorldToClipPos(p.xyz);
-        // o.uv = float2(0,0);
         o.position = p;
         o.uv = s_Triangle[vertex_id] * 2.0;
-        //o.color = c;
-        o.color = float4(1, 1, 1, 1);
-        // o.psize = _ParticleSize * s;
+        o.color = c;
+        o.psize = psize;
         return o;
     }
 
-    // [maxvertexcount(3)]
-    // void geom (point v2f input[1], inout TriangleStream<v2f> outputStream) {
-    //     v2f newVertex;
-    //     newVertex.color = input[0].color;
-    //     float2 newxy;
-    //     // float psize = input[0].psize * input[0].position.w;
-    //     float psize = input[0].psize;
-    //     float2 aspect = float2(_ScreenParams.y * _ScreenParams.z - _ScreenParams.y, 1.0);
+    [maxvertexcount(3)]
+    void geom (point v2f input[1], inout TriangleStream<v2f> outputStream) {
+        v2f newVertex;
+        newVertex.color = input[0].color;
+        float2 newxy;
+        // float psize = input[0].psize * input[0].position.w;
+        float psize = input[0].psize;
+        float2 aspect = float2(_ScreenParams.y * _ScreenParams.z - _ScreenParams.y, 1.0);
 
-    //     newVertex.psize = 0;
+        newVertex.psize = 0;
 
-    //     newxy = input[0].position.xy + float2 (-SQRT_THREE_HALF, -0.5) * psize * aspect;
-    //     newVertex.position = float4(newxy.x, newxy.y, input[0].position.z, input[0].position.w);
-    //     newVertex.uv = float2 (-SQRT_THREE, -1.0);
-    //     outputStream.Append(newVertex);
+        newxy = input[0].position.xy + float2 (-SQRT_THREE_HALF, -0.5) * psize * aspect;
+        newVertex.position = float4(newxy.x, newxy.y, input[0].position.z, input[0].position.w);
+        newVertex.uv = float2 (-SQRT_THREE, -1.0);
+        outputStream.Append(newVertex);
 
-    //     newxy = input[0].position.xy + float2 (0.0, 1.0) * psize * aspect;
-    //     newVertex.position = float4(newxy.x, newxy.y, input[0].position.z, input[0].position.w);
-    //     newVertex.uv = float2 (0.0, 2.0);
-    //     outputStream.Append(newVertex);
+        newxy = input[0].position.xy + float2 (0.0, 1.0) * psize * aspect;
+        newVertex.position = float4(newxy.x, newxy.y, input[0].position.z, input[0].position.w);
+        newVertex.uv = float2 (0.0, 2.0);
+        outputStream.Append(newVertex);
 
-    //     newxy = input[0].position.xy + float2 (SQRT_THREE_HALF, -0.5) * psize * aspect;
-    //     newVertex.position = float4(newxy.x, newxy.y, input[0].position.z, input[0].position.w);
-    //     newVertex.uv = float2 (SQRT_THREE, -1.0);
-    //     outputStream.Append(newVertex);
-    // }
+        newxy = input[0].position.xy + float2 (SQRT_THREE_HALF, -0.5) * psize * aspect;
+        newVertex.position = float4(newxy.x, newxy.y, input[0].position.z, input[0].position.w);
+        newVertex.uv = float2 (SQRT_THREE, -1.0);
+        outputStream.Append(newVertex);
+    }
 
     half4 frag(v2f i) : SV_Target
     {
@@ -153,7 +155,7 @@ Shader "Unlit/Particle"
     {
     CGPROGRAM
     #pragma vertex vert
-    // #pragma geometry geom
+    #pragma geometry geom
     #pragma fragment frag
     ENDCG
     }
