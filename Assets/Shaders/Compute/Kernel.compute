@@ -1,0 +1,84 @@
+﻿#pragma kernel ReduceBuffer
+#pragma kernel CopyInputToBuffer
+#pragma kernel InitParticleBuffer
+#pragma kernel UpdateParticleBuffer
+
+#define THREADS_PER_GROUP 512
+#define PIXEL_THREADS_PER_GROUP 8
+
+Texture2D<float4> _InputPositionTex;
+Texture2D<float4> _InputColorTex;
+RWStructuredBuffer<float4> _PositionBuffer;
+RWStructuredBuffer<float3> _ColorBuffer;
+
+RWStructuredBuffer<float4> _ParticlePositionBuffer;
+RWStructuredBuffer<float3> _ParticleColorBuffer;
+
+uint _BufferSize;
+uint2 _Resolution;
+
+[numthreads(THREADS_PER_GROUP, 1, 1)]
+void ReduceBuffer(uint3 id : SV_DispatchThreadID)
+{
+    uint idx = id.x;
+    if (idx >= _BufferSize / 2) return;
+
+    _PositionBuffer[idx] = _PositionBuffer[idx * 2];
+    _ColorBuffer[idx] = _ColorBuffer[idx * 2];
+}
+
+[numthreads(PIXEL_THREADS_PER_GROUP, PIXEL_THREADS_PER_GROUP, 1)]
+void CopyInputToBuffer(uint3 id : SV_DispatchThreadID)
+{
+    if (any(id.xy >= _Resolution)) return;
+
+    uint index = (id.y * _Resolution.x) + id.x + (_BufferSize / 2);
+
+    _PositionBuffer[index] = _InputPositionTex[id.xy];
+    _ColorBuffer[index] = _InputColorTex[id.xy].xyz;
+}
+
+// PRNG function
+float nrand(float2 uv, float salt)
+{
+    uv += float2(salt, 1234.6789);
+    float2 KI = float2(
+        23.14069263277926, // e^pi (Gelfond's constant)
+        2.665144142690225 // 2^sqrt(2) (Gelfondâ€“Schneider constant)
+    );
+    return frac(sin(dot(uv, KI)) * 43758.5453);
+}
+
+[numthreads(THREADS_PER_GROUP, 1, 1)]
+void InitParticleBuffer(uint3 id : SV_DispatchThreadID)
+{
+    uint idx = id.x;
+    if (idx >= _BufferSize) return;
+
+    float r = frac(sin(((float)idx + 10.0) * 23.14069263277926) * 43758.5453);
+    float life = frac(sin((float)idx * 23.14069263277926) * 43758.5453);
+
+    _ParticlePositionBuffer[idx] = float4(0, 0, 0, life - 0.5);
+    _ParticleColorBuffer[idx] = float3(0, 0, 0);
+}
+
+[numthreads(THREADS_PER_GROUP, 1, 1)]
+void UpdateParticleBuffer(uint3 id : SV_DispatchThreadID)
+{
+    uint idx = id.x;
+    if (idx >= _BufferSize) return;
+
+    float4 p = _ParticlePositionBuffer[idx];
+
+    // float r = frac(sin(((float)idx + 9.0) * 23.14069263277926) * 43758.5453);
+
+    // p.w -= lerp(0.009, 0.01, r);
+    p.w -= 0.1;
+    if (p.w < -0.5)
+    {
+        p = float4(_PositionBuffer[idx].xyz, 0.5);
+        _ParticleColorBuffer[idx] = _ColorBuffer[idx];
+    }
+
+    _ParticlePositionBuffer[idx] = p;
+}

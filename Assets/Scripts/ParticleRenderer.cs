@@ -8,72 +8,39 @@ public class ParticleRenderer : MonoBehaviour
     #region Serialized fields
 
     [SerializeField]
+    ComputeShader _kernelShader;
+
+    [SerializeField]
+    Material _particleMaterial;
+
+    [SerializeField]
     RenderTexture _positionTex;
 
     [SerializeField]
     RenderTexture _colorTex;
 
-    [SerializeField]
-    Shader _kernelShader = null;
+    [SerializeField, Range(1, 4096)]
+    int _historySize = 64;
+
+    [SerializeField, Range(0.01f, 1f)]
+    float _frameInterval = 0.05f;
+
+    [SerializeField, Range(0, 0.5f)]
+    float _particleSize = 0.1f;
 
     [SerializeField]
-    Material _material = null;
-
-    [SerializeField, Range(0.1f, 2)]
-    float _resolutionScale = 0.5f;
-
-    [SerializeField, Range(0, 1)]
-    float _speed = 1f;
+    bool _flip;
 
     [SerializeField]
-    float _scale = 1f;
+    float _effectiveLength = 0;
 
     #region Emitter Parameters
-
-    [SerializeField, Range(0, 1), Header("Emitter Parameters")]
-    float _throttle = 1.0f;
-
-    public float throttle
-    {
-        get { return _throttle; }
-        set { _throttle = value; }
-    }
 
     #endregion
 
     #region Particle Life Parameters
 
-    [SerializeField, Header("Particle Life Parameters")]
-    float _life = 4.0f;
-
-    public float life
-    {
-        get { return _life; }
-        set { _life = value; }
-    }
-
-    [SerializeField, Range(0, 1)]
-    float _lifeRandomness = 0.6f;
-
-    public float lifeRandomness
-    {
-        get { return _lifeRandomness; }
-        set { _lifeRandomness = value; }
-    }
-
     #endregion
-
-    [SerializeField]
-    float _randomSeed = 12345.6789f;
-
-    [SerializeField]
-    int _batchSize = 2000;
-
-    [SerializeField]
-    bool _useHandMask = false;
-
-    [SerializeField, Range(0, 0.5f)]
-    float _handRadius = 0.2f;
 
     [SerializeField]
     CameraEvent _cameraEvent = CameraEvent.AfterForwardOpaque;
@@ -82,40 +49,31 @@ public class ParticleRenderer : MonoBehaviour
 
     #region Fields
 
-    Vector2Int _particleResolution;
-
-    RenderTexture _colorBuffer1;
-    RenderTexture _colorBuffer2;
-    RenderTexture _positionBuffer1;
-    RenderTexture _positionBuffer2;
-    CameraEvent _memoizedCameraEvent;
-
-    Texture2D _xyzTexture;
-    Texture2D _colorTexture;
-
-    Material _kernelMaterial;
     MaterialPropertyBlock _propertyBlock;
     Camera _camera;
     CommandBuffer _commandBuffer;
-    const int HANDS_COUNT = 2;
-    Vector4[] _handCenters = new Vector4[HANDS_COUNT];
+
+    ComputeBuffer[] _positionHistoryBuffer;
+    ComputeBuffer[] _colorHistoryBuffer;
+    ComputeBuffer _particlePositionBuffer;
+    ComputeBuffer _particleColorBuffer;
+    Vector2 _bufferResolution;
+    float _lastHistoryFrameTime;
+    int _currentHistoryIndex;
+
+    int _kernelReduceBuffer;
+    int _kernelCopyInputToBuffer;
+    int _kernelInitParticleBuffer;
+    int _kernelUpdateParticleBuffer;
 
     int _idPositionBuffer;
     int _idColorBuffer;
-    int _idXYZTex;
-    int _idColorTex;
-
-    int _idCameraViewMat;
-
-    int _idLifeParams;
-    int _idConfig;
-    int _idScaleMin;
-    int _idScaleMax;
-    int _idRandomSeed;
-    int _idUVOffset;
-
-    int _kernelInitParticle;
-    int _kernelUpdateParticle;
+    int _idInputPositionTex;
+    int _idInputColorTex;
+    int _idParticlePositionBuffer;
+    int _idParticleColorBuffer;
+    int _idBufferSize;
+    int _idResolution;
 
     static float deltaTime
     {
@@ -126,52 +84,63 @@ public class ParticleRenderer : MonoBehaviour
         }
     }
 
+    const int INPUT_WIDTH = 512;
+    const int INPUT_HEIGHT = 424;
+    const int BUFFER_SIZE = INPUT_WIDTH * INPUT_HEIGHT * 2;
+
     #endregion
 
     #region Unity events
 
     private void Awake()
     {
-        _idPositionBuffer = Shader.PropertyToID("_PositionBuffer");
-        _idColorBuffer = Shader.PropertyToID("_ColorBuffer");
-        _idXYZTex = Shader.PropertyToID("_XYZTex");
-        _idColorTex = Shader.PropertyToID("_ColorTex");
-
-        _idCameraViewMat = Shader.PropertyToID("_CameraViewMat");
-        _idLifeParams = Shader.PropertyToID("_LifeParams");
-        _idConfig = Shader.PropertyToID("_Config");
-
-        _idScaleMin = Shader.PropertyToID("_ScaleMin");
-        _idScaleMax = Shader.PropertyToID("_ScaleMax");
-        _idRandomSeed = Shader.PropertyToID("_RandomSeed");
-
-        _idUVOffset = Shader.PropertyToID("_UVOffset");
-
-        _kernelMaterial = CreateMaterial(_kernelShader);
         _propertyBlock = new MaterialPropertyBlock();
 
         _camera = Camera.main;
         _commandBuffer = new CommandBuffer();
+
+        _kernelReduceBuffer = _kernelShader.FindKernel("ReduceBuffer");
+        _kernelCopyInputToBuffer = _kernelShader.FindKernel("CopyInputToBuffer");
+        _kernelInitParticleBuffer = _kernelShader.FindKernel("InitParticleBuffer");
+        _kernelUpdateParticleBuffer = _kernelShader.FindKernel("UpdateParticleBuffer");
+
+        _idPositionBuffer = Shader.PropertyToID("_PositionBuffer");
+        _idColorBuffer = Shader.PropertyToID("_ColorBuffer");
+        _idParticlePositionBuffer = Shader.PropertyToID("_ParticlePositionBuffer");
+        _idParticleColorBuffer = Shader.PropertyToID("_ParticleColorBuffer");
+        _idInputPositionTex = Shader.PropertyToID("_InputPositionTex");
+        _idInputColorTex = Shader.PropertyToID("_InputColorTex");
+        _idBufferSize = Shader.PropertyToID("_BufferSize");
+        _idResolution = Shader.PropertyToID("_Resolution");
     }
 
     private void OnEnable()
     {
-        // _particleBuffer = new ComputeBuffer(_maxParticles, sizeof(float) * 4);
-
-        // const int groupSize = 512;
-        // int groupsX = (_particleBuffer.count + groupSize - 1) / groupSize;
-
-        // _particleKernel.SetInt(_idMaxParticles, _maxParticles);
-        // _particleKernel.SetVector(_idConfig, new Vector4(_throttle, _randomSeed, Time.deltaTime, Time.time));
-
-        // _particleKernel.SetBuffer(_kernelInitParticle, _idParticleBuffer, _particleBuffer);
-        // _particleKernel.Dispatch(_kernelInitParticle, groupsX, 1, 1);
-
-        // _particleKernel.SetBuffer(_kernelUpdateParticle, _idParticleBuffer, _particleBuffer);
-
-        // _propertyBlock.SetBuffer(_idParticleBuffer, _particleBuffer);
-
         _camera.AddCommandBuffer(_cameraEvent, _commandBuffer);
+
+        _positionHistoryBuffer = new ComputeBuffer[_historySize];
+        _colorHistoryBuffer = new ComputeBuffer[_historySize];
+        for (int i = 0; i < _historySize; i++)
+        {
+            _positionHistoryBuffer[i] = new ComputeBuffer(BUFFER_SIZE, sizeof(float) * 4);
+            _colorHistoryBuffer[i] = new ComputeBuffer(BUFFER_SIZE, sizeof(float) * 3);
+        }
+        _currentHistoryIndex = 0;
+
+        _particlePositionBuffer = new ComputeBuffer(BUFFER_SIZE, sizeof(float) * 4);
+        _particleColorBuffer = new ComputeBuffer(BUFFER_SIZE, sizeof(float) * 3);
+
+        {
+            // init particle buffer
+            _kernelShader.SetBuffer(_kernelInitParticleBuffer, _idParticlePositionBuffer, _particlePositionBuffer);
+            _kernelShader.SetBuffer(_kernelInitParticleBuffer, _idParticleColorBuffer, _particleColorBuffer);
+            _kernelShader.SetInt(_idBufferSize, BUFFER_SIZE);
+            _kernelShader.SetInts(_idResolution, INPUT_WIDTH, INPUT_HEIGHT);
+
+            const int threadsPerGroup = 512;
+            int groupsX = BUFFER_SIZE / threadsPerGroup;
+            _kernelShader.Dispatch(_kernelInitParticleBuffer, groupsX, 1, 1);
+        }
     }
 
     private void OnDisable()
@@ -181,133 +150,99 @@ public class ParticleRenderer : MonoBehaviour
         {
             _camera.RemoveCommandBuffer(_cameraEvent, _commandBuffer);
         }
+
+        for (int i = 0; i < _historySize; i++)
+        {
+            _positionHistoryBuffer[i].Release();
+            _colorHistoryBuffer[i].Release();
+        }
+        _positionHistoryBuffer = null;
+        _colorHistoryBuffer = null;
+
+        _particlePositionBuffer.Release();
+        _particlePositionBuffer = null;
+        _particleColorBuffer.Release();
+        _particleColorBuffer = null;
     }
 
     private void Update()
     {
-        UpdateKernelShader();
-        SwapBuffersAndInvokeKernels();
+        var positionBuffer = _positionHistoryBuffer[_currentHistoryIndex];
+        var colorBuffer = _colorHistoryBuffer[_currentHistoryIndex];
 
-        _propertyBlock.SetTexture(_idPositionBuffer, _positionBuffer2);
-        _propertyBlock.SetTexture(_idColorBuffer, _colorBuffer2);
-        _propertyBlock.SetFloat(_idScaleMin, _scale);
-        _propertyBlock.SetFloat(_idScaleMax, _scale);
-        _propertyBlock.SetFloat(_idRandomSeed, _randomSeed);
-
-        _commandBuffer.Clear();
-        var numParticles = _particleResolution.x * _particleResolution.y;
-        for (int i = 0; i < numParticles; i += _batchSize)
+        if (Time.time - _lastHistoryFrameTime > _frameInterval)
         {
-            _propertyBlock.SetInt("_InstanceOffset", i);
-            _commandBuffer.DrawProcedural(Matrix4x4.identity, _material, 0,
-                MeshTopology.Triangles, 3, Mathf.Min(_batchSize, numParticles - i), _propertyBlock);
+            // update history
+            {
+                // reduce buffer
+                _kernelShader.SetBuffer(_kernelReduceBuffer, _idPositionBuffer, positionBuffer);
+                _kernelShader.SetBuffer(_kernelReduceBuffer, _idColorBuffer, colorBuffer);
+                _kernelShader.SetInt(_idBufferSize, BUFFER_SIZE);
+
+                const int threadsPerGroup = 512;
+                int groupsX = BUFFER_SIZE / threadsPerGroup;
+                _kernelShader.Dispatch(_kernelReduceBuffer, groupsX, 1, 1);
+            }
+            {
+                // copy input to buffer
+                _kernelShader.SetBuffer(_kernelCopyInputToBuffer, _idPositionBuffer, positionBuffer);
+                _kernelShader.SetBuffer(_kernelCopyInputToBuffer, _idColorBuffer, colorBuffer);
+                _kernelShader.SetTexture(_kernelCopyInputToBuffer, _idInputPositionTex, _positionTex);
+                _kernelShader.SetTexture(_kernelCopyInputToBuffer, _idInputColorTex, _colorTex);
+                _kernelShader.SetInt(_idBufferSize, BUFFER_SIZE);
+                _kernelShader.SetInts(_idResolution, INPUT_WIDTH, INPUT_HEIGHT);
+
+                const int threadsPerGroup = 8;
+                int groupsX = INPUT_WIDTH / threadsPerGroup;
+                int groupsY = (INPUT_HEIGHT + threadsPerGroup - 1) / threadsPerGroup;
+                _kernelShader.Dispatch(_kernelCopyInputToBuffer, groupsX, groupsY, 1);
+            }
+
+            _lastHistoryFrameTime = Time.time;
+            _currentHistoryIndex = (_currentHistoryIndex + 1) % _historySize;
         }
 
-        // if (_cameraEvent != _memoizedCameraEvent)
-        // {
-        //     _camera.RemoveCommandBuffer(_memoizedCameraEvent, _commandBuffer);
-        //     _camera.AddCommandBuffer(_cameraEvent, _commandBuffer);
-        //     _memoizedCameraEvent = _cameraEvent;
-        // }
+        {
+            // update particle buffer
+            _kernelShader.SetBuffer(_kernelUpdateParticleBuffer, _idParticlePositionBuffer, _particlePositionBuffer);
+            _kernelShader.SetBuffer(_kernelUpdateParticleBuffer, _idParticleColorBuffer, _particleColorBuffer);
+            _kernelShader.SetBuffer(_kernelUpdateParticleBuffer, _idPositionBuffer, positionBuffer);
+            _kernelShader.SetBuffer(_kernelUpdateParticleBuffer, _idColorBuffer, colorBuffer);
+            _kernelShader.SetInt(_idBufferSize, BUFFER_SIZE);
+            
+            const int threadsPerGroup = 512;
+            int groupsX = BUFFER_SIZE / threadsPerGroup;
+            _kernelShader.Dispatch(_kernelUpdateParticleBuffer, groupsX, 1, 1);
+        }
     }
 
     private void OnRenderObject()
     {
+        _particleMaterial.SetBuffer(_idParticlePositionBuffer, _particlePositionBuffer);
+        _particleMaterial.SetBuffer(_idParticleColorBuffer, _particleColorBuffer);
+        _particleMaterial.SetFloat("_ParticleSize", _particleSize);
+        if (_flip)
+        {
+            _particleMaterial.EnableKeyword("FLIP");
+        }
+        else
+        {
+            _particleMaterial.DisableKeyword("FLIP");
+        }
+        _particleMaterial.SetMatrix("_ModelMat", transform.localToWorldMatrix);
+        _particleMaterial.SetPass(0);
+        Graphics.DrawProcedural(MeshTopology.Points, 1, BUFFER_SIZE);
     }
 
-    #endregion
-
-    #region Zed event
-
-    void OnZedReady()
+    private void OnValidate()
     {
-        // _xyzTexture = zedCamera.CreateTextureMeasureType(sl.MEASURE.XYZ);
-        // _colorTexture = zedCamera.CreateTextureImageType(sl.VIEW.LEFT);
-
-        // var zedWidth = zedCamera.ImageWidth;
-        // var zedHeight = zedCamera.ImageHeight;
-
-        // _particleResolution = new Vector2Int(
-        //     Mathf.FloorToInt(zedWidth * _resolutionScale),
-        //     Mathf.FloorToInt(zedHeight * _resolutionScale)
-        // );
-
-        // _colorBuffer1 = CreateBuffer(RenderTextureFormat.ARGB32);
-        // _colorBuffer2 = CreateBuffer(RenderTextureFormat.ARGB32);
-        // _positionBuffer1 = CreateBuffer(RenderTextureFormat.ARGBFloat);
-        // _positionBuffer2 = CreateBuffer(RenderTextureFormat.ARGBFloat);
-
-        // var pos = _manager.HMDSyncPosition;
-        // var rot = _manager.HMDSyncRotation;
-        // if (rot.x == 0 && rot.y == 0 &&
-        //     rot.z == 0 && rot.w == 0)
-        //     rot = Quaternion.identity;
-
-        // _kernelMaterial.SetMatrix(_idCameraViewMat, Matrix4x4.TRS(pos, rot, Vector3.one));
-        // _kernelMaterial.SetTexture(_idXYZTex, _xyzTexture);
-        // _kernelMaterial.SetTexture(_idColorTex, _colorTexture);
-
-        // Graphics.Blit(null, _positionBuffer2, _kernelMaterial, 0);
-        // Graphics.Blit(null, _colorBuffer2, _kernelMaterial, 1);
+        _effectiveLength = _frameInterval * _historySize;
     }
 
     #endregion
 
     #region Private methods
 
-    void UpdateKernelShader()
-    {
-        var m = _kernelMaterial;
-
-        var invLifeMax = 1.0f / Mathf.Max(_life, 0.01f);
-        var invLifeMin = invLifeMax / Mathf.Max(1 - _lifeRandomness, 0.01f);
-        m.SetVector(_idLifeParams, new Vector2(invLifeMin, invLifeMax));
-
-        m.SetVector(_idConfig, new Vector4(_throttle, _randomSeed, deltaTime, Time.time));
-    }
-
-    Material CreateMaterial(Shader shader)
-    {
-        var material = new Material(shader);
-        material.hideFlags = HideFlags.DontSave;
-        return material;
-    }
-
-    RenderTexture CreateBuffer(RenderTextureFormat format)
-    {
-        var buffer = new RenderTexture(_particleResolution.x, _particleResolution.y, 0, format);
-        buffer.hideFlags = HideFlags.DontSave;
-        buffer.filterMode = FilterMode.Point;
-        buffer.wrapMode = TextureWrapMode.Repeat;
-        return buffer;
-    }
-
-    void SwapBuffersAndInvokeKernels()
-    {
-        // Swap the buffers.
-        // var tempPosition = _positionBuffer1;
-        // var tempColor = _colorBuffer1;
-
-        // _positionBuffer1 = _positionBuffer2;
-        // _colorBuffer1 = _colorBuffer2;
-
-        // _positionBuffer2 = tempPosition;
-        // _colorBuffer2 = tempColor;
-
-        // var pos = _manager.HMDSyncPosition;
-        // var rot = _manager.HMDSyncRotation;
-        // var hmdToZed = _manager.arRig.HmdToZEDCalibration;
-        // var cameraMat = Matrix4x4.TRS(pos, rot, Vector3.one) * Matrix4x4.TRS(hmdToZed.translation, hmdToZed.rotation, Vector3.one);
-
-        // _kernelMaterial.SetVector(_idUVOffset, new Vector2(Random.Range(0, 1f / _particleResolution.x), Random.Range(0, 1f / _particleResolution.y)));
-        // _kernelMaterial.SetMatrix(_idCameraViewMat, cameraMat);
-        // _kernelMaterial.SetTexture(_idPositionBuffer, _positionBuffer1);
-        // _kernelMaterial.SetTexture(_idColorBuffer, _colorBuffer1);
-        // Graphics.Blit(null, _positionBuffer2, _kernelMaterial, 2);
-
-        // _kernelMaterial.SetTexture(_idPositionBuffer, _positionBuffer2);
-        // Graphics.Blit(null, _colorBuffer2, _kernelMaterial, 3);
-    }
 
     #endregion
 }
