@@ -251,6 +251,9 @@ public class ParticleRenderer : MonoBehaviour
 
     private void OnRenderObject()
     {
+        // var frameIndex = (_currentHistoryIndex - 1 + _historySize) % _historySize;
+        // _particleMaterial.SetBuffer(_idParticlePositionBuffer, _positionHistoryBuffer[frameIndex]);
+        // _particleMaterial.SetBuffer(_idParticleColorBuffer, _colorHistoryBuffer[frameIndex]);
         _particleMaterial.SetBuffer(_idParticlePositionBuffer, _particlePositionBuffer);
         _particleMaterial.SetBuffer(_idParticleColorBuffer, _particleColorBuffer);
         _particleMaterial.SetFloat("_ParticleSize", _particleSize);

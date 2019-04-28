@@ -432,10 +432,10 @@ MonoBehaviour:
   _positionTex: {fileID: 8400000, guid: 273880c5820cdf9448a44e7bd159fa60, type: 2}
   _colorTex: {fileID: 8400000, guid: 229912b72ce87394c882247ef75dc7d1, type: 2}
   _historySize: 1024
-  _frameInterval: 0.05
-  _particleSize: 0.008
+  _frameInterval: 0.03
+  _particleSize: 0.01
   _flip: 0
-  _effectiveLength: 51.2
+  _effectiveLength: 30.72
   _cameraEvent: 11
 --- !u!1001 &2014398465
 PrefabInstance:
