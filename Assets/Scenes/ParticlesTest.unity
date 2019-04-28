@@ -184,6 +184,11 @@ PrefabInstance:
       propertyPath: PointCloudMap
       value: 
       objectReference: {fileID: 8400000, guid: 273880c5820cdf9448a44e7bd159fa60, type: 2}
+    - target: {fileID: 6155522501824422964, guid: 673bb3844cf50d848aee3276b19b8ca9,
+        type: 3}
+      propertyPath: ColorMap
+      value: 
+      objectReference: {fileID: 8400000, guid: 229912b72ce87394c882247ef75dc7d1, type: 2}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 673bb3844cf50d848aee3276b19b8ca9, type: 3}
 --- !u!1 &459503793
@@ -423,12 +428,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _kernelShader: {fileID: 7200000, guid: 1bfd506d04714de458350119ab2cac05, type: 3}
-  _particleMaterial: {fileID: 2100000, guid: 89dab5f79ffabb34c80cd3d3b5e1a6ea, type: 2}
+  _particleMaterial: {fileID: 2100000, guid: 0aaf5a60db203164097474db27918971, type: 2}
   _positionTex: {fileID: 8400000, guid: 273880c5820cdf9448a44e7bd159fa60, type: 2}
   _colorTex: {fileID: 8400000, guid: 229912b72ce87394c882247ef75dc7d1, type: 2}
   _historySize: 1024
   _frameInterval: 0.05
-  _particleSize: 0.015
+  _particleSize: 0.008
   _flip: 0
   _effectiveLength: 51.2
   _cameraEvent: 11
@@ -443,6 +448,11 @@ PrefabInstance:
         type: 3}
       propertyPath: m_Name
       value: Kinect VFX
+      objectReference: {fileID: 0}
+    - target: {fileID: 1933265323840245561, guid: ff4722f04736a044987e031761a22e8d,
+        type: 3}
+      propertyPath: m_IsActive
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 904546795497943058, guid: ff4722f04736a044987e031761a22e8d,
         type: 3}

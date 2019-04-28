@@ -57,6 +57,8 @@ public class ParticleRenderer : MonoBehaviour
     ComputeBuffer[] _colorHistoryBuffer;
     ComputeBuffer _particlePositionBuffer;
     ComputeBuffer _particleColorBuffer;
+    ComputeBuffer _scratchPositionBuffer;
+    ComputeBuffer _scratchColorBuffer;
     Vector2 _bufferResolution;
     float _lastHistoryFrameTime;
     int _currentHistoryIndex;
@@ -72,8 +74,11 @@ public class ParticleRenderer : MonoBehaviour
     int _idInputColorTex;
     int _idParticlePositionBuffer;
     int _idParticleColorBuffer;
+    int _idDestinationPositionBuffer;
+    int _idDestinationColorBuffer;
     int _idBufferSize;
     int _idResolution;
+    int _idFeedbackInv;
 
     static float deltaTime
     {
@@ -86,7 +91,13 @@ public class ParticleRenderer : MonoBehaviour
 
     const int INPUT_WIDTH = 512;
     const int INPUT_HEIGHT = 424;
+    const int FEEDBACK_INV = 4;
     const int BUFFER_SIZE = INPUT_WIDTH * INPUT_HEIGHT * 2;
+    // const int INPUT_BUFFER_SIZE = INPUT_WIDTH * INPUT_HEIGHT;
+    // 4^0 + 4^1 + ... + 4^8
+    // const int BUFFER_SIZE = 87381;
+    // 4^0 + 4^1 + ... + 4^7
+    // const int FEEDBACK_SIZE = 21845;
 
     #endregion
 
@@ -108,9 +119,12 @@ public class ParticleRenderer : MonoBehaviour
         _idColorBuffer = Shader.PropertyToID("_ColorBuffer");
         _idParticlePositionBuffer = Shader.PropertyToID("_ParticlePositionBuffer");
         _idParticleColorBuffer = Shader.PropertyToID("_ParticleColorBuffer");
+        _idDestinationPositionBuffer = Shader.PropertyToID("_DestinationPositionBuffer");
+        _idDestinationColorBuffer = Shader.PropertyToID("_DestinationColorBuffer");
         _idInputPositionTex = Shader.PropertyToID("_InputPositionTex");
         _idInputColorTex = Shader.PropertyToID("_InputColorTex");
         _idBufferSize = Shader.PropertyToID("_BufferSize");
+        _idFeedbackInv = Shader.PropertyToID("_FeedbackInv");
         _idResolution = Shader.PropertyToID("_Resolution");
     }
 
@@ -123,12 +137,17 @@ public class ParticleRenderer : MonoBehaviour
         for (int i = 0; i < _historySize; i++)
         {
             _positionHistoryBuffer[i] = new ComputeBuffer(BUFFER_SIZE, sizeof(float) * 4);
-            _colorHistoryBuffer[i] = new ComputeBuffer(BUFFER_SIZE, sizeof(float) * 3);
+            // _colorHistoryBuffer[i] = new ComputeBuffer(BUFFER_SIZE, sizeof(float) * 3);
+            _colorHistoryBuffer[i] = new ComputeBuffer(BUFFER_SIZE, sizeof(uint));
         }
         _currentHistoryIndex = 0;
 
         _particlePositionBuffer = new ComputeBuffer(BUFFER_SIZE, sizeof(float) * 4);
-        _particleColorBuffer = new ComputeBuffer(BUFFER_SIZE, sizeof(float) * 3);
+        // _particleColorBuffer = new ComputeBuffer(BUFFER_SIZE, sizeof(float) * 3);
+        _particleColorBuffer = new ComputeBuffer(BUFFER_SIZE, sizeof(uint));
+
+        _scratchPositionBuffer = new ComputeBuffer(BUFFER_SIZE, sizeof(float) * 4);
+        _scratchColorBuffer = new ComputeBuffer(BUFFER_SIZE, sizeof(uint));
 
         {
             // init particle buffer
@@ -177,7 +196,10 @@ public class ParticleRenderer : MonoBehaviour
                 // reduce buffer
                 _kernelShader.SetBuffer(_kernelReduceBuffer, _idPositionBuffer, positionBuffer);
                 _kernelShader.SetBuffer(_kernelReduceBuffer, _idColorBuffer, colorBuffer);
+                _kernelShader.SetBuffer(_kernelReduceBuffer, _idDestinationPositionBuffer, _scratchPositionBuffer);
+                _kernelShader.SetBuffer(_kernelReduceBuffer, _idDestinationColorBuffer, _scratchColorBuffer);
                 _kernelShader.SetInt(_idBufferSize, BUFFER_SIZE);
+                _kernelShader.SetInt(_idFeedbackInv, FEEDBACK_INV);
 
                 const int threadsPerGroup = 512;
                 int groupsX = BUFFER_SIZE / threadsPerGroup;
@@ -185,8 +207,10 @@ public class ParticleRenderer : MonoBehaviour
             }
             {
                 // copy input to buffer
-                _kernelShader.SetBuffer(_kernelCopyInputToBuffer, _idPositionBuffer, positionBuffer);
-                _kernelShader.SetBuffer(_kernelCopyInputToBuffer, _idColorBuffer, colorBuffer);
+                // _kernelShader.SetBuffer(_kernelCopyInputToBuffer, _idPositionBuffer, positionBuffer);
+                // _kernelShader.SetBuffer(_kernelCopyInputToBuffer, _idColorBuffer, colorBuffer);
+                _kernelShader.SetBuffer(_kernelCopyInputToBuffer, _idDestinationPositionBuffer, _scratchPositionBuffer);
+                _kernelShader.SetBuffer(_kernelCopyInputToBuffer, _idDestinationColorBuffer, _scratchColorBuffer);
                 _kernelShader.SetTexture(_kernelCopyInputToBuffer, _idInputPositionTex, _positionTex);
                 _kernelShader.SetTexture(_kernelCopyInputToBuffer, _idInputColorTex, _colorTex);
                 _kernelShader.SetInt(_idBufferSize, BUFFER_SIZE);
@@ -197,6 +221,15 @@ public class ParticleRenderer : MonoBehaviour
                 int groupsY = (INPUT_HEIGHT + threadsPerGroup - 1) / threadsPerGroup;
                 _kernelShader.Dispatch(_kernelCopyInputToBuffer, groupsX, groupsY, 1);
             }
+
+            // swap scratch and position buffers
+            var tempBuffer = _scratchPositionBuffer;
+            _scratchPositionBuffer = positionBuffer;
+            positionBuffer = _positionHistoryBuffer[_currentHistoryIndex] = tempBuffer;
+
+            tempBuffer = _scratchColorBuffer;
+            _scratchColorBuffer = colorBuffer;
+            colorBuffer = _colorHistoryBuffer[_currentHistoryIndex] = tempBuffer;
 
             _lastHistoryFrameTime = Time.time;
             _currentHistoryIndex = (_currentHistoryIndex + 1) % _historySize;

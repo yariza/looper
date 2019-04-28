@@ -7,8 +7,8 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: Particle
-  m_Shader: {fileID: 4800000, guid: 7197394a1d585b041b6b74e8047fcfe5, type: 3}
+  m_Name: PointCloud
+  m_Shader: {fileID: 4800000, guid: 7b197cf77fc1b3f4093b9cea2f43f934, type: 3}
   m_ShaderKeywords: 
   m_LightmapFlags: 4
   m_EnableInstancingVariants: 0
@@ -76,7 +76,7 @@ Material:
     - _Mode: 0
     - _OcclusionStrength: 1
     - _Parallax: 0.02
-    - _ParticleSize: 0.015
+    - _ParticleSize: 0.008
     - _SmoothnessTextureChannel: 0
     - _SpecularHighlights: 1
     - _SrcBlend: 1
