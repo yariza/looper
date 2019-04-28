@@ -27,18 +27,19 @@ Shader "Unlit/PointCloud"
         //_ScaleMin("-", Float) = 1
         //_ScaleMax("-", Float) = 1
 
+        [Toggle(SCREENSPACE_PARTICLES)]_ScreespaceParticles("Screenspace Particles", float) = 0
         _ParticleSize("Particle Size", float) = 0.01
 
-            //_RandomSeed("-", Float) = 0
+        //_RandomSeed("-", Float) = 0
 
-            _InstanceOffset("-", Int) = 0
+        _InstanceOffset("-", Int) = 0
     }
         CGINCLUDE
 
 #include "UnityCG.cginc"
 
     #pragma multi_compile __ FLIP
-            //#include "Common.cginc"
+    #pragma multi_compile __ SCREENSPACE_PARTICLES
 
     sampler2D _PositionBuffer;
     float4 _PositionBuffer_TexelSize;
@@ -121,8 +122,13 @@ Shader "Unlit/PointCloud"
         v2f newVertex;
         newVertex.color = input[0].color;
         float2 newxy;
-        // float psize = input[0].psize * input[0].position.w;
+
+        #ifdef SCREENSPACE_PARTICLES
+        float psize = input[0].psize * input[0].position.w;
+        #else
         float psize = input[0].psize;
+        #endif
+
         float2 aspect = float2(_ScreenParams.y * _ScreenParams.z - _ScreenParams.y, 1.0);
 
         newVertex.psize = 0;

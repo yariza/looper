@@ -79,6 +79,7 @@ public class ParticleRenderer : MonoBehaviour
     int _idBufferSize;
     int _idResolution;
     int _idFeedbackInv;
+    int _idFeedbackSize;
 
     static float deltaTime
     {
@@ -92,12 +93,11 @@ public class ParticleRenderer : MonoBehaviour
     const int INPUT_WIDTH = 512;
     const int INPUT_HEIGHT = 424;
     const int FEEDBACK_INV = 4;
-    const int BUFFER_SIZE = INPUT_WIDTH * INPUT_HEIGHT * 2;
-    // const int INPUT_BUFFER_SIZE = INPUT_WIDTH * INPUT_HEIGHT;
+    // const int BUFFER_SIZE = INPUT_WIDTH * INPUT_HEIGHT * 2;
     // 4^0 + 4^1 + ... + 4^8
-    // const int BUFFER_SIZE = 87381;
+    const int BUFFER_SIZE = 87381;
     // 4^0 + 4^1 + ... + 4^7
-    // const int FEEDBACK_SIZE = 21845;
+    const int FEEDBACK_SIZE = 21845;
 
     #endregion
 
@@ -125,6 +125,7 @@ public class ParticleRenderer : MonoBehaviour
         _idInputColorTex = Shader.PropertyToID("_InputColorTex");
         _idBufferSize = Shader.PropertyToID("_BufferSize");
         _idFeedbackInv = Shader.PropertyToID("_FeedbackInv");
+        _idFeedbackSize = Shader.PropertyToID("_FeedbackSize");
         _idResolution = Shader.PropertyToID("_Resolution");
     }
 
@@ -182,6 +183,11 @@ public class ParticleRenderer : MonoBehaviour
         _particlePositionBuffer = null;
         _particleColorBuffer.Release();
         _particleColorBuffer = null;
+
+        _scratchPositionBuffer.Release();
+        _scratchPositionBuffer = null;
+        _scratchColorBuffer.Release();
+        _scratchColorBuffer = null;
     }
 
     private void Update()
@@ -214,11 +220,12 @@ public class ParticleRenderer : MonoBehaviour
                 _kernelShader.SetTexture(_kernelCopyInputToBuffer, _idInputPositionTex, _positionTex);
                 _kernelShader.SetTexture(_kernelCopyInputToBuffer, _idInputColorTex, _colorTex);
                 _kernelShader.SetInt(_idBufferSize, BUFFER_SIZE);
+                _kernelShader.SetInt(_idFeedbackSize, FEEDBACK_SIZE);
                 _kernelShader.SetInts(_idResolution, INPUT_WIDTH, INPUT_HEIGHT);
 
                 const int threadsPerGroup = 8;
-                int groupsX = INPUT_WIDTH / threadsPerGroup;
-                int groupsY = (INPUT_HEIGHT + threadsPerGroup - 1) / threadsPerGroup;
+                int groupsX = INPUT_WIDTH / 2 / threadsPerGroup;
+                int groupsY = (INPUT_HEIGHT / 2 + threadsPerGroup - 1) / threadsPerGroup;
                 _kernelShader.Dispatch(_kernelCopyInputToBuffer, groupsX, groupsY, 1);
             }
 
@@ -235,27 +242,28 @@ public class ParticleRenderer : MonoBehaviour
             _currentHistoryIndex = (_currentHistoryIndex + 1) % _historySize;
         }
 
-        {
-            // update particle buffer
-            _kernelShader.SetBuffer(_kernelUpdateParticleBuffer, _idParticlePositionBuffer, _particlePositionBuffer);
-            _kernelShader.SetBuffer(_kernelUpdateParticleBuffer, _idParticleColorBuffer, _particleColorBuffer);
-            _kernelShader.SetBuffer(_kernelUpdateParticleBuffer, _idPositionBuffer, positionBuffer);
-            _kernelShader.SetBuffer(_kernelUpdateParticleBuffer, _idColorBuffer, colorBuffer);
-            _kernelShader.SetInt(_idBufferSize, BUFFER_SIZE);
+        // {
+        //     // update particle buffer
+        //     _kernelShader.SetBuffer(_kernelUpdateParticleBuffer, _idParticlePositionBuffer, _particlePositionBuffer);
+        //     _kernelShader.SetBuffer(_kernelUpdateParticleBuffer, _idParticleColorBuffer, _particleColorBuffer);
+        //     _kernelShader.SetBuffer(_kernelUpdateParticleBuffer, _idPositionBuffer, positionBuffer);
+        //     _kernelShader.SetBuffer(_kernelUpdateParticleBuffer, _idColorBuffer, colorBuffer);
+        //     _kernelShader.SetInt(_idBufferSize, BUFFER_SIZE);
             
-            const int threadsPerGroup = 512;
-            int groupsX = BUFFER_SIZE / threadsPerGroup;
-            _kernelShader.Dispatch(_kernelUpdateParticleBuffer, groupsX, 1, 1);
-        }
+        //     const int threadsPerGroup = 512;
+        //     int groupsX = BUFFER_SIZE / threadsPerGroup;
+        //     _kernelShader.Dispatch(_kernelUpdateParticleBuffer, groupsX, 1, 1);
+        // }
     }
 
     private void OnRenderObject()
     {
         // var frameIndex = (_currentHistoryIndex - 1 + _historySize) % _historySize;
-        // _particleMaterial.SetBuffer(_idParticlePositionBuffer, _positionHistoryBuffer[frameIndex]);
-        // _particleMaterial.SetBuffer(_idParticleColorBuffer, _colorHistoryBuffer[frameIndex]);
-        _particleMaterial.SetBuffer(_idParticlePositionBuffer, _particlePositionBuffer);
-        _particleMaterial.SetBuffer(_idParticleColorBuffer, _particleColorBuffer);
+        var frameIndex = _currentHistoryIndex;
+        _particleMaterial.SetBuffer(_idParticlePositionBuffer, _positionHistoryBuffer[frameIndex]);
+        _particleMaterial.SetBuffer(_idParticleColorBuffer, _colorHistoryBuffer[frameIndex]);
+        // _particleMaterial.SetBuffer(_idParticlePositionBuffer, _particlePositionBuffer);
+        // _particleMaterial.SetBuffer(_idParticleColorBuffer, _particleColorBuffer);
         _particleMaterial.SetFloat("_ParticleSize", _particleSize);
         if (_flip)
         {
