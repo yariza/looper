@@ -13,6 +13,8 @@ public class KinectPointCloudMapped : MonoBehaviour
     public bool ManageSensor = true;
     public bool UseColor = true;
 
+    public float fps = 0.0f;
+
     private KinectSensor sensor;
     private MultiSourceFrameReader multiSourceReader;
     // private DepthFrameReader depthFrameReader;
@@ -52,6 +54,9 @@ public class KinectPointCloudMapped : MonoBehaviour
         }
     }
 
+    float lastFrameTime = 0;
+    float frameInterval = 0;
+
     void Update()
     {
         if (multiSourceReader != null)
@@ -59,10 +64,18 @@ public class KinectPointCloudMapped : MonoBehaviour
             var frame = multiSourceReader.AcquireLatestFrame();
             if (frame != null)
             {
+                // update fps
+                var time = Time.time;
+                var interval = time - lastFrameTime;
+                frameInterval = Mathf.Lerp(frameInterval, interval, 0.1f);
+                fps = 1f / frameInterval;
+                lastFrameTime = time;
+
                 using (var depthFrame = frame.DepthFrameReference.AcquireFrame())
                 {
                     if (depthFrame != null)
                     {
+
                         depthFrame.CopyFrameDataToArray(depthFrameData);
                         int depthFrameWidth = depthFrame.FrameDescription.Width;
                         int depthFrameHeight = depthFrame.FrameDescription.Height;

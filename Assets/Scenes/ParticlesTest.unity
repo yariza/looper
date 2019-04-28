@@ -431,11 +431,11 @@ MonoBehaviour:
   _particleMaterial: {fileID: 2100000, guid: 0aaf5a60db203164097474db27918971, type: 2}
   _positionTex: {fileID: 8400000, guid: 273880c5820cdf9448a44e7bd159fa60, type: 2}
   _colorTex: {fileID: 8400000, guid: 229912b72ce87394c882247ef75dc7d1, type: 2}
-  _historySize: 1024
-  _frameInterval: 0.03
+  _historySize: 2048
+  _frameInterval: 0.06666667
   _particleSize: 0.01
   _flip: 0
-  _effectiveLength: 30.72
+  _effectiveLength: 136.53334
   _cameraEvent: 11
 --- !u!1 &2144774276
 GameObject:

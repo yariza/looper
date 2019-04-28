@@ -47,7 +47,7 @@ Shader "Unlit/Particle"
     // sampler2D _ColorBuffer;
 
     StructuredBuffer<float4> _ParticlePositionBuffer;
-    StructuredBuffer<uint> _ParticleColorBuffer;
+    // StructuredBuffer<uint> _ParticleColorBuffer;
 
     float _ParticleSize;
     float4x4 _ModelMat;
@@ -95,19 +95,22 @@ Shader "Unlit/Particle"
         //     clamp(((iid - fmod(iid, _PositionBuffer_TexelSize.z) * _PositionBuffer_TexelSize.x) / _PositionBuffer_TexelSize.z) * _PositionBuffer_TexelSize.y, _PositionBuffer_TexelSize.y, 1.0 - _PositionBuffer_TexelSize.y),
         //     0.0, 0.0
         //     );
+        float4 particle = _ParticlePositionBuffer[iid];
 
         // float4 p = float4(tex2Dlod(_PositionBuffer, uv).xyz, 1.0);
-        float4 p = _ParticlePositionBuffer[iid].xyzw;
-        float l = p.w + 0.5;
+        // float4 p = _ParticlePositionBuffer[iid].xyzw;
+        float4 p = float4(particle.xyz, 1.0);
+        // float l = p.w + 0.5;
 
-        p.w = 1.0;
+        // p.w = 1.0;
 
         #if !FLIP
         p.x = -p.x;
         #endif
         // float4 c = tex2Dlod(_ColorBuffer, uv);
         // float4 c = float4(_ParticleColorBuffer[iid].rgb, 1.0);
-        float4 c = UnpackColor(_ParticleColorBuffer[iid]);
+        // float4 c = UnpackColor(_ParticleColorBuffer[iid]);
+        float4 c = UnpackColor(asuint(particle.w));
 
         p = float4(mul(_ModelMat, p).xyz, 1.0);
 
