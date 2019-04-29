@@ -46,6 +46,9 @@ public class ParticleRenderer : MonoBehaviour
     float _particleSize = 0.1f;
 
     [SerializeField]
+    Material _meshMaterial = null;
+
+    [SerializeField]
     CameraEvent _cameraEvent = CameraEvent.AfterForwardOpaque;
 
     #endregion
@@ -59,11 +62,11 @@ public class ParticleRenderer : MonoBehaviour
     ComputeBuffer[] _positionHistoryBuffer;
     ComputeBuffer _particlePositionBuffer;
     ComputeBuffer _scratchPositionBuffer;
+    ComputeBuffer _meshIndicesBuffer;
+    uint[] _meshIndices;
     Vector2 _bufferResolution;
     float _lastHistoryFrameTime;
     int _currentHistoryIndex;
-
-    Mesh _mesh;
 
     int _kernelReduceBuffer;
     int _kernelCopyInputToBuffer;
@@ -132,6 +135,40 @@ public class ParticleRenderer : MonoBehaviour
         _idFeedbackInv = Shader.PropertyToID("_FeedbackInv");
         _idFeedbackSize = Shader.PropertyToID("_FeedbackSize");
         _idResolution = Shader.PropertyToID("_Resolution");
+
+        List<uint> indices = new List<uint>();
+        uint vertexOffset = 0;
+        uint mipSize = 1;
+        for (uint stride = 512; stride >= 1; stride /= 2)
+        {
+            for (uint x = 0; x < INPUT_WIDTH - stride; x += stride)
+            {
+                for (uint y = 0; y < INPUT_HEIGHT - stride; y += stride)
+                {
+                    // process square
+                    uint i_00 = morton_encode(x + 0, y + 0) + vertexOffset;
+                    uint i_01 = morton_encode(x + 1, y + 0) + vertexOffset;
+                    uint i_10 = morton_encode(x + 0, y + 1) + vertexOffset;
+                    uint i_11 = morton_encode(x + 1, y + 1) + vertexOffset;
+
+                    // i_00, i_01, i_10
+                    indices.Add(i_00);
+                    indices.Add(i_01);
+                    indices.Add(i_10);
+
+                    // i_11, i_01, i_10
+                    indices.Add(i_11);
+                    indices.Add(i_01);
+                    indices.Add(i_10);
+                }
+            }
+
+            vertexOffset += mipSize;
+            mipSize *= 4;
+        }
+        _meshIndices = indices.ToArray();
+
+        Debug.Assert(vertexOffset == BUFFER_SIZE);
     }
 
     private void OnEnable()
@@ -159,6 +196,12 @@ public class ParticleRenderer : MonoBehaviour
             int groupsX = BUFFER_SIZE / threadsPerGroup;
             _kernelShader.Dispatch(_kernelInitParticleBuffer, groupsX, 1, 1);
         }
+
+        {
+            // init mesh indices buffer
+            _meshIndicesBuffer = new ComputeBuffer(_meshIndices.Length, sizeof(uint));
+            _meshIndicesBuffer.SetData(_meshIndices);
+        }
     }
 
     private void OnDisable()
@@ -179,6 +222,9 @@ public class ParticleRenderer : MonoBehaviour
 
         _scratchPositionBuffer.Release();
         _scratchPositionBuffer = null;
+
+        _meshIndicesBuffer.Release();
+        _meshIndicesBuffer = null;
     }
 
     private void Update()
@@ -259,7 +305,11 @@ public class ParticleRenderer : MonoBehaviour
         }
         else if (_renderType == RenderType.Mesh)
         {
-
+            _meshMaterial.SetBuffer(_idParticlePositionBuffer, _positionHistoryBuffer[frameIndex]);
+            _meshMaterial.SetBuffer("_MeshIndicesBuffer", _meshIndicesBuffer);
+            _meshMaterial.SetMatrix("_ModelMat", transform.localToWorldMatrix);
+            _meshMaterial.SetPass(0);
+            Graphics.DrawProcedural(MeshTopology.Triangles, 3, _meshIndices.Length / 3);
         }
     }
 
@@ -272,6 +322,37 @@ public class ParticleRenderer : MonoBehaviour
 
     #region Private methods
 
+    uint morton2D_SplitBy2Bits(uint a)
+    {
+        uint x = a;
+        x = (x | x << 16) & 0x0000FFFF;
+        x = (x | x << 8) & 0x00FF00FF;
+        x = (x | x << 4) & 0x0F0F0F0F;
+        x = (x | x << 2) & 0x33333333;
+        x = (x | x << 1) & 0x55555555;
+        return x;
+    }
+
+    uint morton_encode(uint x, uint y)
+    {
+        return morton2D_SplitBy2Bits(x) | (morton2D_SplitBy2Bits(y) << 1);
+    }
+
+    uint morton2D_GetSecondBits(uint m)
+    {
+        uint x = m & 0x55555555;
+        x = (x ^ (x >> 1)) & 0x33333333;
+        x = (x ^ (x >> 2)) & 0x0F0F0F0F;
+        x = (x ^ (x >> 4)) & 0x00FF00FF;
+        x = (x ^ (x >> 8)) & 0x0000FFFF;
+        return x;
+    }
+
+    void morton_decode(uint m, out uint x, out uint y)
+    {
+        x = morton2D_GetSecondBits(m);
+        y = morton2D_GetSecondBits(m >> 1);
+    }
 
     #endregion
 }
