@@ -5,19 +5,19 @@ using UnityEngine;
 public class PointCloudRenderer : MonoBehaviour
 {
     [SerializeField]
-    RenderTexture _positionTex;
+    RenderTexture _positionTex = null;
 
     [SerializeField]
-    RenderTexture _colorTex;
+    RenderTexture _colorTex = null;
 
     [SerializeField]
-    Material _material;
+    Material _material = null;
 
     [SerializeField, Range(0, 0.5f)]
     float _particleSize = 0.1f;
 
     [SerializeField]
-    bool _flip;
+    bool _flip = false;
 
     int _numPoints;
 

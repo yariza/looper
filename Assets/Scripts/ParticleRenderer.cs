@@ -7,40 +7,43 @@ public class ParticleRenderer : MonoBehaviour
 {
     #region Serialized fields
 
+    [Header("Resources")]
     [SerializeField]
-    ComputeShader _kernelShader;
+    ComputeShader _kernelShader = null;
 
     [SerializeField]
-    Material _particleMaterial;
+    RenderTexture _positionTex = null;
 
     [SerializeField]
-    RenderTexture _positionTex;
+    RenderTexture _colorTex = null;
 
-    [SerializeField]
-    RenderTexture _colorTex;
-
+    [Header("History Parameters")]
     [SerializeField, Range(1, 4096)]
     int _historySize = 64;
 
     [SerializeField, Range(0.01f, 1f)]
     float _frameInterval = 0.05f;
 
-    [SerializeField, Range(0, 0.5f)]
-    float _particleSize = 0.1f;
-
     [SerializeField]
-    bool _flip;
+    bool _flip = false;
 
     [SerializeField]
     float _effectiveLength = 0;
 
-    #region Emitter Parameters
+    public enum RenderType
+    {
+        Particles,
+        Mesh,
+    }
+    [Header("Render Parameters")]
+    [SerializeField]
+    RenderType _renderType = RenderType.Particles;
 
-    #endregion
+    [SerializeField]
+    Material _particleMaterial = null;
 
-    #region Particle Life Parameters
-
-    #endregion
+    [SerializeField, Range(0, 0.5f)]
+    float _particleSize = 0.1f;
 
     [SerializeField]
     CameraEvent _cameraEvent = CameraEvent.AfterForwardOpaque;
@@ -54,14 +57,13 @@ public class ParticleRenderer : MonoBehaviour
     CommandBuffer _commandBuffer;
 
     ComputeBuffer[] _positionHistoryBuffer;
-    // ComputeBuffer[] _colorHistoryBuffer;
     ComputeBuffer _particlePositionBuffer;
-    // ComputeBuffer _particleColorBuffer;
     ComputeBuffer _scratchPositionBuffer;
-    // ComputeBuffer _scratchColorBuffer;
     Vector2 _bufferResolution;
     float _lastHistoryFrameTime;
     int _currentHistoryIndex;
+
+    Mesh _mesh;
 
     int _kernelReduceBuffer;
     int _kernelCopyInputToBuffer;
@@ -134,26 +136,19 @@ public class ParticleRenderer : MonoBehaviour
         _camera.AddCommandBuffer(_cameraEvent, _commandBuffer);
 
         _positionHistoryBuffer = new ComputeBuffer[_historySize];
-        // _colorHistoryBuffer = new ComputeBuffer[_historySize];
         for (int i = 0; i < _historySize; i++)
         {
             _positionHistoryBuffer[i] = new ComputeBuffer(BUFFER_SIZE, sizeof(float) * 4);
-            // _colorHistoryBuffer[i] = new ComputeBuffer(BUFFER_SIZE, sizeof(float) * 3);
-            // _colorHistoryBuffer[i] = new ComputeBuffer(BUFFER_SIZE, sizeof(uint));
         }
         _currentHistoryIndex = 0;
 
         _particlePositionBuffer = new ComputeBuffer(BUFFER_SIZE, sizeof(float) * 4);
-        // _particleColorBuffer = new ComputeBuffer(BUFFER_SIZE, sizeof(float) * 3);
-        // _particleColorBuffer = new ComputeBuffer(BUFFER_SIZE, sizeof(uint));
 
         _scratchPositionBuffer = new ComputeBuffer(BUFFER_SIZE, sizeof(float) * 4);
-        // _scratchColorBuffer = new ComputeBuffer(BUFFER_SIZE, sizeof(uint));
 
         {
             // init particle buffer
             _kernelShader.SetBuffer(_kernelInitParticleBuffer, _idParticlePositionBuffer, _particlePositionBuffer);
-            // _kernelShader.SetBuffer(_kernelInitParticleBuffer, _idParticleColorBuffer, _particleColorBuffer);
             _kernelShader.SetInt(_idBufferSize, BUFFER_SIZE);
             _kernelShader.SetInts(_idResolution, INPUT_WIDTH, INPUT_HEIGHT);
 
@@ -165,7 +160,6 @@ public class ParticleRenderer : MonoBehaviour
 
     private void OnDisable()
     {
-        // _particleBuffer.Release();
         if (_camera != null)
         {
             _camera.RemoveCommandBuffer(_cameraEvent, _commandBuffer);
@@ -174,26 +168,19 @@ public class ParticleRenderer : MonoBehaviour
         for (int i = 0; i < _historySize; i++)
         {
             _positionHistoryBuffer[i].Release();
-            // _colorHistoryBuffer[i].Release();
         }
         _positionHistoryBuffer = null;
-        // _colorHistoryBuffer = null;
 
         _particlePositionBuffer.Release();
         _particlePositionBuffer = null;
-        // _particleColorBuffer.Release();
-        // _particleColorBuffer = null;
 
         _scratchPositionBuffer.Release();
         _scratchPositionBuffer = null;
-        // _scratchColorBuffer.Release();
-        // _scratchColorBuffer = null;
     }
 
     private void Update()
     {
         var positionBuffer = _positionHistoryBuffer[_currentHistoryIndex];
-        // var colorBuffer = _colorHistoryBuffer[_currentHistoryIndex];
 
         if (Time.time - _lastHistoryFrameTime > _frameInterval)
         {
@@ -201,9 +188,7 @@ public class ParticleRenderer : MonoBehaviour
             {
                 // reduce buffer
                 _kernelShader.SetBuffer(_kernelReduceBuffer, _idPositionBuffer, positionBuffer);
-                // _kernelShader.SetBuffer(_kernelReduceBuffer, _idColorBuffer, colorBuffer);
                 _kernelShader.SetBuffer(_kernelReduceBuffer, _idDestinationPositionBuffer, _scratchPositionBuffer);
-                // _kernelShader.SetBuffer(_kernelReduceBuffer, _idDestinationColorBuffer, _scratchColorBuffer);
                 _kernelShader.SetInt(_idBufferSize, BUFFER_SIZE);
                 _kernelShader.SetInt(_idFeedbackInv, FEEDBACK_INV);
 
@@ -213,10 +198,7 @@ public class ParticleRenderer : MonoBehaviour
             }
             {
                 // copy input to buffer
-                // _kernelShader.SetBuffer(_kernelCopyInputToBuffer, _idPositionBuffer, positionBuffer);
-                // _kernelShader.SetBuffer(_kernelCopyInputToBuffer, _idColorBuffer, colorBuffer);
                 _kernelShader.SetBuffer(_kernelCopyInputToBuffer, _idDestinationPositionBuffer, _scratchPositionBuffer);
-                // _kernelShader.SetBuffer(_kernelCopyInputToBuffer, _idDestinationColorBuffer, _scratchColorBuffer);
                 _kernelShader.SetTexture(_kernelCopyInputToBuffer, _idInputPositionTex, _positionTex);
                 _kernelShader.SetTexture(_kernelCopyInputToBuffer, _idInputColorTex, _colorTex);
                 _kernelShader.SetInt(_idBufferSize, BUFFER_SIZE);
@@ -233,10 +215,6 @@ public class ParticleRenderer : MonoBehaviour
             var tempBuffer = _scratchPositionBuffer;
             _scratchPositionBuffer = positionBuffer;
             positionBuffer = _positionHistoryBuffer[_currentHistoryIndex] = tempBuffer;
-
-            // tempBuffer = _scratchColorBuffer;
-            // _scratchColorBuffer = colorBuffer;
-            // colorBuffer = _colorHistoryBuffer[_currentHistoryIndex] = tempBuffer;
 
             _lastHistoryFrameTime = Time.time;
             _currentHistoryIndex = (_currentHistoryIndex + 1) % _historySize;
@@ -258,24 +236,28 @@ public class ParticleRenderer : MonoBehaviour
 
     private void OnRenderObject()
     {
-        // var frameIndex = (_currentHistoryIndex - 1 + _historySize) % _historySize;
         var frameIndex = _currentHistoryIndex;
-        _particleMaterial.SetBuffer(_idParticlePositionBuffer, _positionHistoryBuffer[frameIndex]);
-        // _particleMaterial.SetBuffer(_idParticleColorBuffer, _colorHistoryBuffer[frameIndex]);
-        // _particleMaterial.SetBuffer(_idParticlePositionBuffer, _particlePositionBuffer);
-        // _particleMaterial.SetBuffer(_idParticleColorBuffer, _particleColorBuffer);
-        _particleMaterial.SetFloat("_ParticleSize", _particleSize);
-        if (_flip)
+
+        if (_renderType == RenderType.Particles)
         {
-            _particleMaterial.EnableKeyword("FLIP");
+            _particleMaterial.SetBuffer(_idParticlePositionBuffer, _positionHistoryBuffer[frameIndex]);
+            _particleMaterial.SetFloat("_ParticleSize", _particleSize);
+            if (_flip)
+            {
+                _particleMaterial.EnableKeyword("FLIP");
+            }
+            else
+            {
+                _particleMaterial.DisableKeyword("FLIP");
+            }
+            _particleMaterial.SetMatrix("_ModelMat", transform.localToWorldMatrix);
+            _particleMaterial.SetPass(0);
+            Graphics.DrawProcedural(MeshTopology.Points, 1, BUFFER_SIZE);
         }
-        else
+        else if (_renderType == RenderType.Mesh)
         {
-            _particleMaterial.DisableKeyword("FLIP");
+
         }
-        _particleMaterial.SetMatrix("_ModelMat", transform.localToWorldMatrix);
-        _particleMaterial.SetPass(0);
-        Graphics.DrawProcedural(MeshTopology.Points, 1, BUFFER_SIZE);
     }
 
     private void OnValidate()

@@ -52,6 +52,14 @@ public class KinectPointCloudMapped : MonoBehaviour
             depthFrameData = new ushort[sensor.DepthFrameSource.FrameDescription.LengthInPixels];
             cameraSpacePoints = new CameraSpacePoint[depthFrameData.Length];
         }
+        
+        // clear the textures
+        var rt = RenderTexture.active;
+        RenderTexture.active = PointCloudMap;
+        GL.Clear(false, true, Color.black);
+        RenderTexture.active = ColorMap;
+        GL.Clear(false, true, Color.black);
+        RenderTexture.active = rt;
     }
 
     float lastFrameTime = 0;

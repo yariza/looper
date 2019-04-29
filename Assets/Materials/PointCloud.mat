@@ -9,7 +9,7 @@ Material:
   m_PrefabAsset: {fileID: 0}
   m_Name: PointCloud
   m_Shader: {fileID: 4800000, guid: 7b197cf77fc1b3f4093b9cea2f43f934, type: 3}
-  m_ShaderKeywords: SCREENSPACE_PARTICLES
+  m_ShaderKeywords: 
   m_LightmapFlags: 4
   m_EnableInstancingVariants: 0
   m_DoubleSidedGI: 0
@@ -77,7 +77,7 @@ Material:
     - _OcclusionStrength: 1
     - _Parallax: 0.02
     - _ParticleSize: 0.01
-    - _ScreespaceParticles: 1
+    - _ScreespaceParticles: 0
     - _SmoothnessTextureChannel: 0
     - _SpecularHighlights: 1
     - _SrcBlend: 1
