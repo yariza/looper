@@ -596,5 +596,65 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 4056208204003714361, guid: 11a9dd1db659c064aa1756dcff871d3c,
+        type: 3}
+      propertyPath: _type
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4056208204003714361, guid: 11a9dd1db659c064aa1756dcff871d3c,
+        type: 3}
+      propertyPath: m_Enabled
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4056208204003714356, guid: 11a9dd1db659c064aa1756dcff871d3c,
+        type: 3}
+      propertyPath: m_Enabled
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4056208204003714356, guid: 11a9dd1db659c064aa1756dcff871d3c,
+        type: 3}
+      propertyPath: _historySize
+      value: 50
+      objectReference: {fileID: 0}
+    - target: {fileID: 4056208204003714356, guid: 11a9dd1db659c064aa1756dcff871d3c,
+        type: 3}
+      propertyPath: _effectiveLength
+      value: 3.3333335
+      objectReference: {fileID: 0}
+    - target: {fileID: 4056208204003714356, guid: 11a9dd1db659c064aa1756dcff871d3c,
+        type: 3}
+      propertyPath: _renderType
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4056208204003714356, guid: 11a9dd1db659c064aa1756dcff871d3c,
+        type: 3}
+      propertyPath: _bounds.m_Extent.x
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 4056208204003714356, guid: 11a9dd1db659c064aa1756dcff871d3c,
+        type: 3}
+      propertyPath: _bounds.m_Extent.y
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 4056208204003714356, guid: 11a9dd1db659c064aa1756dcff871d3c,
+        type: 3}
+      propertyPath: _bounds.m_Extent.z
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 4056208204003714356, guid: 11a9dd1db659c064aa1756dcff871d3c,
+        type: 3}
+      propertyPath: _bounds.m_Center.z
+      value: -11.92
+      objectReference: {fileID: 0}
+    - target: {fileID: 4056208204003714356, guid: 11a9dd1db659c064aa1756dcff871d3c,
+        type: 3}
+      propertyPath: _bounds.m_Center.y
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4056208204003714356, guid: 11a9dd1db659c064aa1756dcff871d3c,
+        type: 3}
+      propertyPath: _bounds.m_Center.x
+      value: 1.24
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 11a9dd1db659c064aa1756dcff871d3c, type: 3}
