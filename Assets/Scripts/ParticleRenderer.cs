@@ -95,12 +95,15 @@ public class ParticleRenderer : MonoBehaviour
     const int INPUT_WIDTH = 512;
     const int INPUT_HEIGHT = 424;
     const int FEEDBACK_INV = 4;
-    // const int BUFFER_SIZE = INPUT_WIDTH * INPUT_HEIGHT * 2;
     // 4^0 + 4^1 + ... + 4^8
-    const int BUFFER_SIZE = 87381;
+    // const int BUFFER_SIZE = 87381;
     // 4^0 + 4^1 + ... + 4^7
-    const int FEEDBACK_SIZE = 21845;
+    // const int FEEDBACK_SIZE = 21845;
 
+    // 4^0 + 4^1 + ... + 4^9
+    const int BUFFER_SIZE = 349525;
+    // 4^0 + 4^1 + ... + 4^8
+    const int FEEDBACK_SIZE = 87381;
     #endregion
 
     #region Unity events
@@ -206,8 +209,8 @@ public class ParticleRenderer : MonoBehaviour
                 _kernelShader.SetInts(_idResolution, INPUT_WIDTH, INPUT_HEIGHT);
 
                 const int threadsPerGroup = 8;
-                int groupsX = INPUT_WIDTH / 2 / threadsPerGroup;
-                int groupsY = (INPUT_HEIGHT / 2 + threadsPerGroup - 1) / threadsPerGroup;
+                int groupsX = INPUT_WIDTH / threadsPerGroup;
+                int groupsY = (INPUT_HEIGHT + threadsPerGroup - 1) / threadsPerGroup;
                 _kernelShader.Dispatch(_kernelCopyInputToBuffer, groupsX, groupsY, 1);
             }
 

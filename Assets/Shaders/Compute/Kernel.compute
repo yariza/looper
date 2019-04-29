@@ -66,7 +66,8 @@ uint morton_encode(uint2 a)
 [numthreads(PIXEL_THREADS_PER_GROUP, PIXEL_THREADS_PER_GROUP, 1)]
 void CopyInputToBuffer(uint3 id : SV_DispatchThreadID)
 {
-    uint2 p = id.xy * 2;
+    // uint2 p = id.xy * 2;
+    uint2 p = id.xy;
     if (any(p >= _Resolution)) return;
 
     uint index = morton_encode(id.xy) + _FeedbackSize;
