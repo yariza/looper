@@ -141,25 +141,28 @@ public class ParticleRenderer : MonoBehaviour
         uint mipSize = 1;
         for (uint stride = 512; stride >= 1; stride /= 2)
         {
-            for (uint x = 0; x < INPUT_WIDTH - stride; x += stride)
+            if (stride < 64)
             {
-                for (uint y = 0; y < INPUT_HEIGHT - stride; y += stride)
+                for (uint x = 0, xi = 0; x < INPUT_WIDTH - stride; x += stride, xi++)
                 {
-                    // process square
-                    uint i_00 = morton_encode(x + 0, y + 0) + vertexOffset;
-                    uint i_01 = morton_encode(x + 1, y + 0) + vertexOffset;
-                    uint i_10 = morton_encode(x + 0, y + 1) + vertexOffset;
-                    uint i_11 = morton_encode(x + 1, y + 1) + vertexOffset;
+                    for (uint y = 0, yi = 0; y < INPUT_HEIGHT - stride; y += stride, yi++)
+                    {
+                        // process square
+                        uint i_00 = morton_encode(xi + 0, yi + 0) + vertexOffset;
+                        uint i_01 = morton_encode(xi + 1, yi + 0) + vertexOffset;
+                        uint i_10 = morton_encode(xi + 0, yi + 1) + vertexOffset;
+                        uint i_11 = morton_encode(xi + 1, yi + 1) + vertexOffset;
 
-                    // i_00, i_01, i_10
-                    indices.Add(i_00);
-                    indices.Add(i_01);
-                    indices.Add(i_10);
+                        // i_00, i_01, i_10
+                        indices.Add(i_00);
+                        indices.Add(i_01);
+                        indices.Add(i_10);
 
-                    // i_11, i_01, i_10
-                    indices.Add(i_11);
-                    indices.Add(i_01);
-                    indices.Add(i_10);
+                        // i_11, i_01, i_10
+                        indices.Add(i_11);
+                        indices.Add(i_01);
+                        indices.Add(i_10);
+                    }
                 }
             }
 
