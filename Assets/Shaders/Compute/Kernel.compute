@@ -9,13 +9,10 @@
 Texture2D<float4> _InputPositionTex;
 Texture2D<float4> _InputColorTex;
 RWStructuredBuffer<float4> _PositionBuffer;
-// RWStructuredBuffer<uint> _ColorBuffer;
 
 RWStructuredBuffer<float4> _ParticlePositionBuffer;
-// RWStructuredBuffer<uint> _ParticleColorBuffer;
 
 RWStructuredBuffer<float4> _DestinationPositionBuffer;
-// RWStructuredBuffer<uint> _DestinationColorBuffer;
 
 uint _BufferSize;
 uint2 _Resolution;
@@ -26,15 +23,9 @@ uint _FeedbackSize;
 void ReduceBuffer(uint3 id : SV_DispatchThreadID)
 {
     uint idx = id.x;
-    // if (idx >= _BufferSize / 2) return;
     if (idx * _FeedbackInv >= _BufferSize) return;
 
     _DestinationPositionBuffer[idx] = _PositionBuffer[idx * _FeedbackInv];
-    // _DestinationColorBuffer[idx] = _ColorBuffer[idx * _FeedbackInv];
-    // _PositionBuffer[idx] = _PositionBuffer[idx * 2];
-    // _ColorBuffer[idx] = _ColorBuffer[idx * 2];
-    // _PositionBuffer[idx] = _PositionBuffer[idx * _FeedbackInv];
-    // _ColorBuffer[idx] = _ColorBuffer[idx * _FeedbackInv];
 }
 
 uint PackColor(float4 color)
@@ -75,21 +66,14 @@ uint morton_encode(uint2 a)
 [numthreads(PIXEL_THREADS_PER_GROUP, PIXEL_THREADS_PER_GROUP, 1)]
 void CopyInputToBuffer(uint3 id : SV_DispatchThreadID)
 {
-    if (any(id.xy * 2 >= _Resolution)) return;
-
-    // if (any((id.xy % 2) != uint2(0, 0))) return;
+    uint2 p = id.xy * 2;
+    if (any(p >= _Resolution)) return;
 
     uint index = morton_encode(id.xy) + _FeedbackSize;
 
-    uint color = PackColor(_InputColorTex[id.xy * 2]);
+    uint color = PackColor(_InputColorTex[p]);
 
-    // uint index = (id.y * _Resolution.x) + id.x + (_BufferSize / 2);
-    // uint index = (id.y * _Resolution.x) + id.x + _FeedbackSize;
-    // _PositionBuffer[index] = _InputPositionTex[id.xy];
-    // _ColorBuffer[index] = _InputColorTex[id.xy].xyz;
-    // _ColorBuffer[index] = PackColor(_InputColorTex[id.xy]);
-    _DestinationPositionBuffer[index] = float4(_InputPositionTex[id.xy * 2].xyz, asfloat(color));
-    // _DestinationColorBuffer[index] = PackColor(_InputColorTex[id.xy * 2]);
+    _DestinationPositionBuffer[index] = float4(_InputPositionTex[p].xyz, asfloat(color));
 }
 
 // PRNG function
@@ -113,7 +97,6 @@ void InitParticleBuffer(uint3 id : SV_DispatchThreadID)
     float life = frac(sin((float)idx * 23.14069263277926) * 43758.5453);
 
     _ParticlePositionBuffer[idx] = float4(0, 0, 0, 0);
-    // _ParticleColorBuffer[idx] = 0;
 }
 
 [numthreads(THREADS_PER_GROUP, 1, 1)]
@@ -124,14 +107,10 @@ void UpdateParticleBuffer(uint3 id : SV_DispatchThreadID)
 
     float4 p = _ParticlePositionBuffer[idx];
 
-    // float r = frac(sin(((float)idx + 9.0) * 23.14069263277926) * 43758.5453);
-
-    // p.w -= lerp(0.009, 0.01, r);
     p.w -= 0.1;
     if (p.w < -0.5)
     {
         p = float4(_PositionBuffer[idx].xyz, p.w + 1.0);
-        // _ParticleColorBuffer[idx] = _ColorBuffer[idx];
     }
 
     _ParticlePositionBuffer[idx] = p;
