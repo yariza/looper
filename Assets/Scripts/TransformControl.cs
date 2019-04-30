@@ -67,7 +67,7 @@ public class TransformControl : MonoBehaviour
         }
         dPos *= _speed * Time.deltaTime;
 
-        transform.localPosition += dPos;
+        transform.position += transform.TransformDirection(dPos);
 
         Vector3 dEuler = Vector3.zero;
         if (Input.GetKey(_turnLeft))
@@ -90,6 +90,6 @@ public class TransformControl : MonoBehaviour
 
         transform.localEulerAngles += dEuler;
     }
-        
+
     #endregion
 }

@@ -2,7 +2,7 @@
 {
     Properties
     {
-        _SlopeThreshold("Slope Threshold", Range(0, 100)) = 1000
+        _DistanceThreshold("Distance Threshold", Range(0, 1)) = 0.1
     }
     CGINCLUDE
 
@@ -25,7 +25,7 @@
     float3 _BoundsMin;
     float3 _BoundsMax;
 
-    float _SlopeThreshold;
+    float _DistanceThreshold;
 
     float4 UnpackColor(uint c)
     {
@@ -56,11 +56,6 @@
         p = float4(mul(_ModelMat, p).xyz, 1.0);
         o.worldPos = p.xyz;
 
-        if (any(p.xyz < _BoundsMin || p.xyz > _BoundsMax))
-        {
-            // p.xyz = float3(0.0 / 0.0, 0.0 / 0.0, 0.0 / 0.0);
-        }
-
         p = UnityWorldToClipPos(p.xyz);
 
         o.vertex = p;
@@ -82,19 +77,19 @@
         float3 pos1 = input[1].localPos;
         float3 pos2 = input[2].localPos;
 
-        float x0 = pos0.x / pos0.z;
-        float x1 = pos1.x / pos1.z;
-        float x2 = pos2.x / pos2.z;
+        // float x0 = pos0.x / pos0.z;
+        // float x1 = pos1.x / pos1.z;
+        // float x2 = pos2.x / pos2.z;
 
-        float d01 = pos0 - pos1;
-        float d12 = pos1 - pos2;
-        float d02 = pos0 - pos2;
+        // float d01 = pos0 - pos1;
+        // float d12 = pos1 - pos2;
+        // float d02 = pos0 - pos2;
 
-        float d = max(dot(d01, d01), max(dot(d12, d12), dot(d02, d02)));
-        // float dz = max(abs(pos0.z - pos1.z), max(abs(pos1.z - pos2.z), abs(pos0.z - pos2.z)));
-        float dx = max(abs(x0 - x1), max(abs(x1 - x2), abs(x0 - x2)));
+        // float d = max(dot(d01, d01), max(dot(d12, d12), dot(d02, d02)));
+        float dz = max(abs(pos0.z - pos1.z), max(abs(pos1.z - pos2.z), abs(pos0.z - pos2.z)));
+        // float dx = max(abs(x0 - x1), max(abs(x1 - x2), abs(x0 - x2)));
 
-        if (d / dx > _SlopeThreshold)
+        if (dz > _DistanceThreshold)
         {
             return;
         }

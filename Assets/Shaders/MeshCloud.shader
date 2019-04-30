@@ -4,7 +4,7 @@
     {
         _PositionBuffer("-", 2D) = "black"{}
         _ColorBuffer("-", 2D) = "black"{}
-        _SlopeThreshold("Slope Threshold", Range(0, 100)) = 1000
+        _DistanceThreshold("Distance Threshold", Range(0, 1)) = 0.1
     }
     CGINCLUDE
 
@@ -29,7 +29,7 @@
     float3 _BoundsMin;
     float3 _BoundsMax;
 
-    float _SlopeThreshold;
+    float _DistanceThreshold;
 
     static uint2 pixelOffset[6] =
     {
@@ -73,10 +73,10 @@
         p = float4(mul(_ModelMat, p).xyz, 1.0);
         o.worldPos = p.xyz;
 
-        if (any(p.xyz < _BoundsMin || p.xyz > _BoundsMax))
-        {
-            p.xyz = float3(0.0 / 0.0, 0.0 / 0.0, 0.0 / 0.0);
-        }
+        // if (any(p.xyz < _BoundsMin || p.xyz > _BoundsMax))
+        // {
+        //     p.xyz = float3(0.0 / 0.0, 0.0 / 0.0, 0.0 / 0.0);
+        // }
 
         p = UnityWorldToClipPos(p.xyz);
 
@@ -88,20 +88,27 @@
     [maxvertexcount(3)]
     void geom (triangle v2f input[3], inout TriangleStream<v2f> outputStream)
     {
+        if (any((input[0].worldPos < _BoundsMin) || (input[0].worldPos > _BoundsMax)) ||
+            any((input[1].worldPos < _BoundsMin) || (input[1].worldPos > _BoundsMax)) ||
+            any((input[2].worldPos < _BoundsMin) || (input[2].worldPos > _BoundsMax)))
+        {
+            return;
+        }
+
         float3 pos0 = input[0].localPos;
         float3 pos1 = input[1].localPos;
         float3 pos2 = input[2].localPos;
 
-        float x0 = pos0.x / pos0.z;
-        float x1 = pos1.x / pos1.z;
-        float x2 = pos2.x / pos2.z;
+        // float x0 = pos0.x / pos0.z;
+        // float x1 = pos1.x / pos1.z;
+        // float x2 = pos2.x / pos2.z;
 
         float dz = max(abs(pos0.z - pos1.z), max(abs(pos1.z - pos2.z), abs(pos0.z - pos2.z)));
-        float dx = max(abs(x0 - x1), max(abs(x1 - x2), abs(x0 - x2)));
+        // float dx = max(abs(x0 - x1), max(abs(x1 - x2), abs(x0 - x2)));
 
-        float slope = dz / dx;
+        // float slope = dz / dx;
 
-        if (slope > _SlopeThreshold)
+        if (dz > _DistanceThreshold)
         {
             return;
         }
