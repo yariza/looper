@@ -613,6 +613,7 @@ GameObject:
   - component: {fileID: 1140653505}
   - component: {fileID: 1140653504}
   - component: {fileID: 1140653503}
+  - component: {fileID: 1140653506}
   m_Layer: 0
   m_Name: ThirdPersonCamera
   m_TagString: Untagged
@@ -627,7 +628,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1140653502}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 63d2213248a35b446b708f306d8dbd3f, type: 3}
   m_Name: 
@@ -710,6 +711,26 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 4
   m_LocalEulerAnglesHint: {x: 0, y: -176.40201, z: 0}
+--- !u!114 &1140653506
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1140653502}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 262fcab97f7398a49b6922046098724d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _target: {fileID: 210930730}
+  _distance: 3.45
+  _distanceLFOAmplitude: 1.19
+  _distanceLFOFrequency: 0.08
+  _yawSpeed: 2
+  _pitch: 10
+  _pitchLFOAmplitude: 20
+  _pitchLFOFrequency: 0.06
 --- !u!1 &1323477450
 GameObject:
   m_ObjectHideFlags: 0
