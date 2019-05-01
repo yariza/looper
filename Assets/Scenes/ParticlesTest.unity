@@ -615,8 +615,8 @@ MonoBehaviour:
   _multiplier: 1.115
   _output: {fileID: 24300002, guid: 0784e7e6fe569174fba2fe28083f32d1, type: 2}
   _rolloff: 0
-  _minDist: 0.1
-  _maxDist: 3
+  _minDist: 0.2
+  _maxDist: 10
 --- !u!4 &582003341
 Transform:
   m_ObjectHideFlags: 0
