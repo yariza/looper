@@ -157,6 +157,8 @@ MonoBehaviour:
   _turnRight: 259
   _turnDown: 263
   _turnUp: 265
+  _playerPrefKey: kinect_transform
+  _timeBeforeWrite: 2
 --- !u!114 &4056208204003714356
 MonoBehaviour:
   m_ObjectHideFlags: 0

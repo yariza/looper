@@ -32,9 +32,6 @@ public class PointCloudRenderer : MonoBehaviour
     [SerializeField]
     Material _meshMaterial = null;
 
-    [SerializeField]
-    Bounds _bounds = new Bounds(Vector3.zero, Vector3.one);
-
     int _numPoints;
 
     Camera _camera;
@@ -53,8 +50,6 @@ public class PointCloudRenderer : MonoBehaviour
             _particleMaterial.SetTexture("_ColorBuffer", _colorTex);
             _particleMaterial.SetFloat("_ParticleSize", _particleSize);
             _particleMaterial.SetMatrix("_ModelMat", transform.localToWorldMatrix);
-            _particleMaterial.SetVector("_BoundsMin", _bounds.min);
-            _particleMaterial.SetVector("_BoundsMax", _bounds.max);
             if (_flip)
             {
                 _particleMaterial.EnableKeyword("FLIP");
@@ -71,8 +66,6 @@ public class PointCloudRenderer : MonoBehaviour
             _meshMaterial.SetTexture("_PositionBuffer", _positionTex);
             _meshMaterial.SetTexture("_ColorBuffer", _colorTex);
             _meshMaterial.SetMatrix("_ModelMat", transform.localToWorldMatrix);
-            _meshMaterial.SetVector("_BoundsMin", _bounds.min);
-            _meshMaterial.SetVector("_BoundsMax", _bounds.max);
             if (_flip)
             {
                 _meshMaterial.EnableKeyword("FLIP");
@@ -84,11 +77,6 @@ public class PointCloudRenderer : MonoBehaviour
             _meshMaterial.SetPass(0);
             Graphics.DrawProcedural(MeshTopology.Triangles, 3, (_positionTex.width - 1) * (_positionTex.height - 1) * 2);
         }
-    }
-
-    private void OnDrawGizmosSelected()
-    {
-        Gizmos.DrawWireCube(_bounds.center, _bounds.size);
     }
 
     private void Update()

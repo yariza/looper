@@ -49,9 +49,6 @@ public class ParticleRenderer : MonoBehaviour
     Material _meshMaterial = null;
 
     [SerializeField]
-    Bounds _bounds = new Bounds(Vector3.zero, Vector3.one);
-
-    [SerializeField]
     CameraEvent _cameraEvent = CameraEvent.AfterForwardOpaque;
 
     #endregion
@@ -233,11 +230,6 @@ public class ParticleRenderer : MonoBehaviour
         _meshIndicesBuffer = null;
     }
 
-    private void OnDrawGizmosSelected()
-    {
-        Gizmos.DrawWireCube(_bounds.center, _bounds.size);
-    }
-
     private void Update()
     {
         var positionBuffer = _positionHistoryBuffer[_currentHistoryIndex];
@@ -311,8 +303,6 @@ public class ParticleRenderer : MonoBehaviour
                 _particleMaterial.DisableKeyword("FLIP");
             }
             _particleMaterial.SetMatrix("_ModelMat", transform.localToWorldMatrix);
-            _particleMaterial.SetVector("_BoundsMin", _bounds.min);
-            _particleMaterial.SetVector("_BoundsMax", _bounds.max);
             _particleMaterial.SetPass(0);
             Graphics.DrawProcedural(MeshTopology.Points, 1, BUFFER_SIZE);
         }
@@ -321,8 +311,6 @@ public class ParticleRenderer : MonoBehaviour
             _meshMaterial.SetBuffer(_idParticlePositionBuffer, _positionHistoryBuffer[frameIndex]);
             _meshMaterial.SetBuffer("_MeshIndicesBuffer", _meshIndicesBuffer);
             _meshMaterial.SetMatrix("_ModelMat", transform.localToWorldMatrix);
-            _meshMaterial.SetVector("_BoundsMin", _bounds.min);
-            _meshMaterial.SetVector("_BoundsMax", _bounds.max);
             _meshMaterial.SetPass(0);
             Graphics.DrawProcedural(MeshTopology.Triangles, 3, _meshIndices.Length / 3);
         }

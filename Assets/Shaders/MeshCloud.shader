@@ -25,9 +25,7 @@
     sampler2D _ColorBuffer;
 
     float4x4 _ModelMat;
-
-    float3 _BoundsMin;
-    float3 _BoundsMax;
+    float4x4 _BoundingBoxMat;
 
     float _DistanceThreshold;
 
@@ -88,9 +86,13 @@
     [maxvertexcount(3)]
     void geom (triangle v2f input[3], inout TriangleStream<v2f> outputStream)
     {
-        if (any((input[0].worldPos < _BoundsMin) || (input[0].worldPos > _BoundsMax)) ||
-            any((input[1].worldPos < _BoundsMin) || (input[1].worldPos > _BoundsMax)) ||
-            any((input[2].worldPos < _BoundsMin) || (input[2].worldPos > _BoundsMax)))
+        float3 box0 = mul(_BoundingBoxMat, float4(input[0].worldPos, 1.0)).xyz;
+        float3 box1 = mul(_BoundingBoxMat, float4(input[1].worldPos, 1.0)).xyz;
+        float3 box2 = mul(_BoundingBoxMat, float4(input[2].worldPos, 1.0)).xyz;
+
+        if (any(box0 < (-0.5).xxx) || any(box0 > (0.5).xxx) ||
+            any(box1 < (-0.5).xxx) || any(box1 > (0.5).xxx) ||
+            any(box2 < (-0.5).xxx) || any(box2 > (0.5).xxx))
         {
             return;
         }

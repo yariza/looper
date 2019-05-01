@@ -50,6 +50,7 @@ Shader "Unlit/PointCloud"
 
     float _ParticleSize;
     float4x4 _ModelMat;
+    float4x4 _BoundingBoxMat;
 
     uint _InstanceOffset;
 
@@ -64,6 +65,7 @@ Shader "Unlit/PointCloud"
         float2 uv : TEXCOORD0;
         float4 color : COLOR;
         float psize : TEXCOORD1;
+        float3 worldPos : TEXCOORD2;
     };
 
     #define SQRT_THREE 1.73205080757
@@ -106,6 +108,7 @@ Shader "Unlit/PointCloud"
 
         v2f o;
 
+        o.worldPos = p.xyz;
         p = UnityWorldToClipPos(p.xyz);
         p.xy += s_Triangle[vertex_id] * psize * aspect;
 
@@ -119,7 +122,16 @@ Shader "Unlit/PointCloud"
 
     [maxvertexcount(3)]
     void geom (point v2f input[1], inout TriangleStream<v2f> outputStream) {
+
+        float3 box = mul(_BoundingBoxMat, float4(input[0].worldPos, 1.0)).xyz;
+
+        if (any(box < (-0.5).xxx) || any(box > (0.5).xxx))
+        {
+            return;
+        }
+
         v2f newVertex;
+        newVertex.worldPos = float3(0.0, 0.0, 0.0);
         newVertex.color = input[0].color;
         float2 newxy;
 
