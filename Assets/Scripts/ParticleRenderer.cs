@@ -29,6 +29,10 @@ public class ParticleRenderer : MonoBehaviour
 
     [SerializeField]
     float _effectiveLength = 0;
+    public float effectiveLength
+    {
+        get { return _effectiveLength; }
+    }
 
     public enum RenderType
     {

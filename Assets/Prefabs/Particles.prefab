@@ -130,9 +130,6 @@ MonoBehaviour:
   _particleSize: 0.01
   _flip: 0
   _meshMaterial: {fileID: 2100000, guid: a1c6f9bc09e18d34eb042e50253f15bd, type: 2}
-  _bounds:
-    m_Center: {x: 0, y: 0, z: 0}
-    m_Extent: {x: 100, y: 100, z: 100}
 --- !u!114 &4056208204003714359
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -147,6 +144,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _speed: 0.05
   _rotationSpeed: 5
+  _scaleSpeed: 0.1
   _left: 260
   _right: 262
   _back: 261
@@ -157,6 +155,13 @@ MonoBehaviour:
   _turnRight: 259
   _turnDown: 263
   _turnUp: 265
+  _enableScaling: 0
+  _scaleXDown: 59
+  _scaleXUp: 39
+  _scaleYDown: 91
+  _scaleYUp: 93
+  _scaleZDown: 45
+  _scaleZUp: 61
   _playerPrefKey: kinect_transform
   _timeBeforeWrite: 2
 --- !u!114 &4056208204003714356
@@ -182,7 +187,4 @@ MonoBehaviour:
   _particleMaterial: {fileID: 2100000, guid: 0aaf5a60db203164097474db27918971, type: 2}
   _particleSize: 0.01
   _meshMaterial: {fileID: 2100000, guid: 4fc436651ffc15f4f9cd015bf6074c6f, type: 2}
-  _bounds:
-    m_Center: {x: 0, y: 0, z: 0}
-    m_Extent: {x: 100, y: 100, z: 100}
   _cameraEvent: 11
