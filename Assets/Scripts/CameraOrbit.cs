@@ -30,6 +30,11 @@ public class CameraOrbit : MonoBehaviour
     [SerializeField, Range(0.001f, 10f)]
     float _pitchLFOFrequency = 0.1f;
 
+    [SerializeField]
+    bool _enabled = true;
+    [SerializeField]
+    KeyCode _toggleEnable = KeyCode.V;
+
     #endregion
 
     #region Private fields
@@ -44,6 +49,13 @@ public class CameraOrbit : MonoBehaviour
 
     private void Update()
     {
+        if (Input.GetKeyDown(_toggleEnable))
+        {
+            _enabled = !_enabled;
+        }
+
+        if (!_enabled) return;
+
         var targetPos = _target.position;
 
         var pitch = _pitch;

@@ -15,6 +15,9 @@ public class TransformControl : MonoBehaviour
 	[SerializeField, Range(0, 1)]
 	float _scaleSpeed = 0.1f;
 
+	[SerializeField]
+	bool _localSpace = true;
+
     [Header("Keys")]
     [SerializeField]
     KeyCode _left = KeyCode.Keypad4;
@@ -120,7 +123,14 @@ public class TransformControl : MonoBehaviour
         }
         dPos *= _speed * Time.deltaTime;
 
-        transform.position += transform.TransformDirection(dPos);
+		if (_localSpace)
+		{
+        	transform.position += transform.TransformDirection(dPos);
+		}
+		else
+		{
+			transform.localPosition += dPos;
+		}
 
         Vector3 dEuler = Vector3.zero;
         if (Input.GetKey(_turnLeft))

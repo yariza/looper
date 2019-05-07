@@ -339,6 +339,7 @@ MonoBehaviour:
   _speed: 0.1
   _rotationSpeed: 20
   _scaleSpeed: 0.1
+  _localSpace: 1
   _left: 106
   _right: 108
   _back: 107
@@ -693,7 +694,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1140653502}
-  m_Enabled: 0
+  m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 63d2213248a35b446b708f306d8dbd3f, type: 3}
   m_Name: 
@@ -701,6 +702,7 @@ MonoBehaviour:
   _speed: 0.2
   _rotationSpeed: 10
   _scaleSpeed: 0.1
+  _localSpace: 1
   _left: 97
   _right: 100
   _back: 115
@@ -796,6 +798,8 @@ MonoBehaviour:
   _pitch: 10
   _pitchLFOAmplitude: 20
   _pitchLFOFrequency: 0.06
+  _enabled: 1
+  _toggleEnable: 118
 --- !u!1 &1323477450
 GameObject:
   m_ObjectHideFlags: 0
@@ -1229,6 +1233,21 @@ PrefabInstance:
       propertyPath: m_Name
       value: Particles
       objectReference: {fileID: 0}
+    - target: {fileID: 4056208204003714356, guid: 11a9dd1db659c064aa1756dcff871d3c,
+        type: 3}
+      propertyPath: m_Enabled
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4056208204003714356, guid: 11a9dd1db659c064aa1756dcff871d3c,
+        type: 3}
+      propertyPath: _historySize
+      value: 512
+      objectReference: {fileID: 0}
+    - target: {fileID: 4056208204003714356, guid: 11a9dd1db659c064aa1756dcff871d3c,
+        type: 3}
+      propertyPath: _effectiveLength
+      value: 34.133335
+      objectReference: {fileID: 0}
     - target: {fileID: 4056208204003714358, guid: 11a9dd1db659c064aa1756dcff871d3c,
         type: 3}
       propertyPath: m_LocalPosition.x
@@ -1284,20 +1303,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 4056208204003714356, guid: 11a9dd1db659c064aa1756dcff871d3c,
+    - target: {fileID: 4056208204003714359, guid: 11a9dd1db659c064aa1756dcff871d3c,
         type: 3}
-      propertyPath: m_Enabled
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 4056208204003714356, guid: 11a9dd1db659c064aa1756dcff871d3c,
-        type: 3}
-      propertyPath: _historySize
-      value: 1024
-      objectReference: {fileID: 0}
-    - target: {fileID: 4056208204003714356, guid: 11a9dd1db659c064aa1756dcff871d3c,
-        type: 3}
-      propertyPath: _effectiveLength
-      value: 68.26667
+      propertyPath: _localSpace
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 11a9dd1db659c064aa1756dcff871d3c, type: 3}
